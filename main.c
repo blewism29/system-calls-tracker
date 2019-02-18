@@ -32,7 +32,7 @@ int main()
             orig_rax = ptrace(PTRACE_PEEKUSER, child, 8 * ORIG_RAX, NULL);
             if (isNotInCall) {
                 isNotInCall = 0;
-                printf("System call made: %s\n", callname(orig_eax));
+                printf("System call made: %s\n", callname(orig_rax));
             } else {
                 isNotInCall = 1;
             }
