@@ -59,15 +59,15 @@ int main(int argc, char *argv[])
             
                 orig_rax = ptrace(PTRACE_PEEKUSER, child, 8 * ORIG_RAX, NULL);
                 if (isNotInCall) {
+                    isNotInCall = 0;
+                    if (vOptionActive || VOptionActive) printf("System call made: %s\n\n", callname(orig_rax));
+                    addRecord(orig_rax);
+
                     if (VOptionActive) {
                         kill(child, SIGSTOP);
                         getchar();
                         kill(child, SIGCONT);
                     }
-                
-                    isNotInCall = 0;
-                    if (vOptionActive || VOptionActive) printf("System call made: %s\n\n", callname(orig_rax));
-                    addRecord(orig_rax);
                 } else {
                     isNotInCall = 1;
                 }
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
         return 0;
     } else {
-        printf ("Could not found 'Program' name to run");
-        return -1;
+        printf ("Could not found 'Program' name to run\n");
+        return 0;
     }
 }
