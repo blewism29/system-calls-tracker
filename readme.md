@@ -1,4 +1,4 @@
-# Thread lottery
+# System Call Tracker (rastreador)
 
 .
 
@@ -32,3 +32,4 @@ To run for the first time this project follow the next steps:
 * **Benjamin Lewis**
 * **Jafet**
 * **Jose**
+* **Victor**
