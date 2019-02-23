@@ -5,13 +5,15 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sys/reg.h>
+#include <signal.h>
+#include <string.h>
 
 // Custom includes
 #include "utilities/syscall.h"
 #include "utilities/table.h"
 
 // Main
-int main()
+int main(int argc, char *argv[])
 {   
     // Properties
     long orig_rax;
@@ -19,33 +21,65 @@ int main()
     // Flags
     int status;
     int isNotInCall = 1;
-    int vOptionActive = 1; // flag for option v (V causes this to be active as well)
-    int VOptionActive = 1; // flag for option V
+    int vOptionActive = 0; // flag for option v (V causes this to be active as well)
+    int VOptionActive = 0; // flag for option V
+    int programFileNameFound = 0;
 
-    pid_t child = fork();
-
-    // Main Process
-    if(child == 0) {
-        ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-        execl("./program", "prog", NULL); // Replace current process with new program.
-    }
-    else {
-        while(1) {
-            wait(&status);
-            if(WIFEXITED(status)) break;
-          
-            orig_rax = ptrace(PTRACE_PEEKUSER, child, 8 * ORIG_RAX, NULL);
-            if (isNotInCall) {
-                isNotInCall = 0;
-                if (vOptionActive || VOptionActive) printf("System call made: %s\n\n", callname(orig_rax));
-                addRecord(orig_rax);
+    // Parsing command line parameters.
+    char programName[1000] = "";
+    for (int i = 1; i < argc; i++) {
+        if (programFileNameFound == 0) {
+            if (strcmp("-v", argv[i]) == 0) {
+                vOptionActive = 1;
+            } else if (strcmp("-V", argv[i]) == 0) {
+                vOptionActive = 1;
+                VOptionActive = 1;
             } else {
-                isNotInCall = 1;
+                strcat(programName, argv[i]);
+                programFileNameFound = 1;
             }
-          
-            ptrace(PTRACE_SYSCALL, child, NULL, NULL);
-       }
-       printTable(); // Always have to run at the end of the process execution to show the summay of the syscalls called.
+        } else {
+            strcat(programName, " ");
+            strcat(programName, argv[i]);
+        }
     }
-    return 0;
+    
+    if (programFileNameFound == 1) {
+        pid_t child = fork();
+
+        // Main Process
+        if(child == 0) {
+            ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+            execl(programName, "prog", NULL); // Replace current process with new program.
+        }
+        else {
+            while(1) {
+                wait(&status);
+                if(WIFEXITED(status)) break;
+            
+                orig_rax = ptrace(PTRACE_PEEKUSER, child, 8 * ORIG_RAX, NULL);
+                if (isNotInCall) {
+                    if (VOptionActive) {
+                        kill(child, SIGSTOP);
+                        getchar();
+                        kill(child, SIGCONT);
+                    }
+                
+                    isNotInCall = 0;
+                    if (vOptionActive || VOptionActive) printf("System call made: %s\n\n", callname(orig_rax));
+                    addRecord(orig_rax);
+                } else {
+                    isNotInCall = 1;
+                }
+            
+                ptrace(PTRACE_SYSCALL, child, NULL, NULL);
+        }
+            printTable(); // Always have to run at the end of the process execution to show the summay of the syscalls called.
+        }
+
+        return 0;
+    } else {
+        printf ("Could not found 'Program' name to run");
+        return -1;
+    }
 }

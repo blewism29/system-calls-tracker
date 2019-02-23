@@ -1,4 +1,5 @@
 #include <syscall.h>
+#include "syscall.h"
 
 static char* callname_buf[256];
 

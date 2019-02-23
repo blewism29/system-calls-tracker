@@ -1,7 +1,7 @@
 // System includes
 #include <stdlib.h>
-#include<stdio.h>
-#include<string.h>
+#include <stdio.h>
+#include <string.h>
 
 // Custom includes
 #include "table.h"
@@ -14,7 +14,7 @@ struct sysCallItem {
     int value;
 };
 
-#define MAXITEMS 100
+#define MAXITEMS 1000
 static struct sysCallItem* sysCallsDictionary[MAXITEMS];
 
 // Public function to add or update a syscall call, if syscall is not already registered a new record is added to the list
