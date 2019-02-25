@@ -14,10 +14,10 @@
 
 // Main
 int main(int argc, char *argv[])
-{   
+{
     // Properties
     long orig_rax;
-    
+
     // Flags
     int status;
     int isNotInCall = 1;
@@ -43,24 +43,23 @@ int main(int argc, char *argv[])
             strcat(programName, argv[i]);
         }
     }
-    
     if (programFileNameFound == 1) {
         pid_t child = fork();
 
         // Main Process
         if(child == 0) {
-            ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-            execl(programName, "prog", NULL); // Replace current process with new program.
+            ptrace(PTRACE_TRACEME, child, NULL, NULL);
+	          execl("/bin/sh","sh", "-c", programName,NULL); // Replace current process with new program.
         }
         else {
             while(1) {
                 wait(&status);
                 if(WIFEXITED(status)) break;
-            
+
                 orig_rax = ptrace(PTRACE_PEEKUSER, child, 8 * ORIG_RAX, NULL);
                 if (isNotInCall) {
                     isNotInCall = 0;
-                    if (vOptionActive || VOptionActive) printf("System call made: %s\n\n", callname(orig_rax));
+                    if (vOptionActive) printf("System call made: %s\n\n", callname(orig_rax));
                     addRecord(orig_rax);
 
                     if (VOptionActive) {
@@ -71,7 +70,7 @@ int main(int argc, char *argv[])
                 } else {
                     isNotInCall = 1;
                 }
-            
+
                 ptrace(PTRACE_SYSCALL, child, NULL, NULL);
         }
             printTable(); // Always have to run at the end of the process execution to show the summay of the syscalls called.
